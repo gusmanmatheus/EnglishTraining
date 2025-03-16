@@ -35,7 +35,7 @@ kotlin {
         
         androidMain.dependencies {
             implementation(compose.preview)
-            implementation(libs.androidx.activity.compose)
+             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -46,6 +46,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(libs.androidx.ui)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -82,6 +83,9 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.ui.android)
+    implementation(libs.androidx.ui.unit.android)
+    implementation(libs.androidx.foundation.android)
     debugImplementation(compose.uiTooling)
 }
 
