@@ -1,14 +1,17 @@
 package org.example.project
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import org.example.project.feature.GameVerbViewModel
+import org.example.project.feature.GameVisorRoot
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 @Preview
 fun App() {
- val alphabet = "abcdefghijklmnopqrstuvxyz".toList()
- LetterGrid(alphabet)
+    val gameViewModel = GameVerbViewModel()
+   GameVisorRoot(gameViewModel)
 }
+
+
+//    val alphabet = "abcdefghijklmnopqrstuvxyz".toList()
+// LetterGrid(alphabet)
