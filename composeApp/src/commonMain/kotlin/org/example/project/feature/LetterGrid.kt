@@ -1,5 +1,6 @@
 package org.example.project.feature
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -12,15 +13,18 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun LetterGrid(
-    letters : List<Char>
+    letters: List<Char>,
+    onClick: (Char) -> Unit
 ) {
     LazyVerticalGrid(
-        modifier = Modifier.padding(16.dp),
-        columns = GridCells.Adaptive(50.dp),
-        contentPadding = PaddingValues(4.dp,)
-    ){
-        items(letters){ letters ->
-             LetterCompose(letters)
+        columns = GridCells.Adaptive(minSize = 56.dp),
+        contentPadding = PaddingValues(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.padding(16.dp)
+    ) {
+        items(letters) { letter ->
+            LetterCompose(letter, onClick)
         }
     }
 }
