@@ -22,13 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.map
 import org.example.project.Verb
 import org.example.project.assets.Black
 import org.example.project.assets.ForestGreen
@@ -38,23 +38,20 @@ import org.example.project.data.TenseVerb
 
 @Composable
 fun GameVisorRoot(gameViewModel: GameVerbViewModel) {
-
-    val state by gameViewModel.stateTenseVerb.collectAsStateWithLifecycle()
-
     val verb by gameViewModel.stateVerb.collectAsStateWithLifecycle()
     val tried by gameViewModel.stateTriedAnswer.collectAsStateWithLifecycle()
     val progress by gameViewModel.stateProgressValue.collectAsStateWithLifecycle()
     val filteredLetters by gameViewModel.stateFilteredLetters.collectAsStateWithLifecycle()
-    val isButtonEnable by gameViewModel.stateIsButtonEnable.collectAsStateWithLifecycle()
     val listTenseVerb by gameViewModel.stateListTenseVerb.collectAsStateWithLifecycle()
-
+    val limitProgress = gameViewModel.verbsLimit
 
     GameVisorScreen(
         verb,
         tried,
         progress,
+        limitProgress,
         filteredLetters,
-         listTenseVerb,
+        listTenseVerb,
         onAction = { action ->
             gameViewModel.onAction(action)
         })
@@ -65,59 +62,17 @@ fun GameVisorScreen(
     verb: Verb,
     tried: TriedAnswer,
     progress: Int,
+    limitProgress: Float,
     filteredLetters: List<Char>,
-     listTenseVerb: List<TenseVerb>,    onAction: (GameScreenAction) -> Unit
+    listTenseVerb: List<TenseVerb>, onAction: (GameScreenAction) -> Unit
 ) {
-
-
-    val isButtonEnable by remember(tried) {
-        derivedStateOf {
-            tried.tried.count() >= tried.correctAnswer.length
-        }
-    }
-
     Column {
-        Text(
-            "${verb.present} / ${verb.portuguese}",
-            textAlign = TextAlign.Center,
-            color = ForestGreen,
-            fontWeight = FontWeight.Bold,
-            fontSize = 56.sp,
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        )
-
-
-        Column(modifier = Modifier.fillMaxWidth()) {
-            AskVerbIndicatorList(
-                listTenseVerb,
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
-            ) {
-                onAction(GameScreenAction.ChangeVerbTense(it))
-            }
-            TextReceiver(
-                tried.tried,
-                tried.maxLetter,
-                modifier = Modifier.fillMaxWidth().background(color = Color.White).padding(16.dp)
-
-            ) { index -> onAction(GameScreenAction.RemovingLetter(index)) }
-        }
-        Button(
-            onClick = { onAction(GameScreenAction.Answer) },
-            modifier = Modifier.padding(16.dp)
-                .align(Alignment.End),
-            enabled = isButtonEnable,
-            colors = ButtonColors(
-                contentColor = ForestGreen,
-                disabledContainerColor = Color.Gray,
-                containerColor = LimeGreen,
-                disabledContentColor = Color.DarkGray
-            ),
-            content = { Text("Answer") }
-        )
-
-
+        RangeLinearProgressBar(progress.toFloat() + 1, 0f..limitProgress)
+        VerbDisplay(verb)
+        InteractionSection(tried = tried, listTenseVerb = listTenseVerb, onAction = onAction)
+        AnswerButton(tried = tried, onAction = onAction)
         LetterGrid(
-            verb.filteredLetters,
+            tried.allLetters,
             onClick = { letter ->
                 if (tried.maxLetter > tried.tried.count()) {
                     onAction(GameScreenAction.TypingAnswer(letter))
@@ -125,8 +80,67 @@ fun GameVisorScreen(
                 }
             })
     }
+
+
 }
 
+@Composable
+fun AnswerButton(tried: TriedAnswer, onAction: (GameScreenAction) -> Unit) {
+    val isButtonEnable by remember(tried) {
+        derivedStateOf {
+            tried.tried.count() >= tried.correctAnswer.length
+        }
+    }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = { onAction(GameScreenAction.Answer) },
+            modifier = Modifier
+                .padding(16.dp)
+                .align(Alignment.End),
+            enabled = isButtonEnable,
+            colors = ButtonColors(
+                contentColor = LimeGreen,
+                disabledContainerColor = Color.Gray,
+                containerColor = if (isButtonEnable) LimeGreen else Color.Gray,
+                disabledContentColor = Color.DarkGray
+            ),
+            content = { Text("Answer", color = Color.White) }
+        )
+    }
+}
+
+@Composable
+fun InteractionSection(
+    tried: TriedAnswer,
+    listTenseVerb: List<TenseVerb>,
+    onAction: (GameScreenAction) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        AskVerbIndicatorList(
+            listTenseVerb,
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            onClick = { onAction(GameScreenAction.ChangeVerbTense(it)) }
+        )
+        TextReceiver(
+            tried.tried,
+            tried.maxLetter,
+            modifier = Modifier.fillMaxWidth().background(color = Color.White).padding(16.dp),
+            onClick = { index -> onAction(GameScreenAction.RemovingLetter(index)) }
+        )
+    }
+}
+
+@Composable
+fun VerbDisplay(verb: Verb) {
+    Text(
+        "${verb.present} / ${verb.portuguese}",
+        textAlign = TextAlign.Center,
+        color = ForestGreen,
+        fontWeight = FontWeight.Bold,
+        fontSize = 56.sp,
+        modifier = Modifier.fillMaxWidth().padding(16.dp)
+    )
+}
 
 @Composable
 fun AskVerbIndicatorList(
@@ -137,9 +151,9 @@ fun AskVerbIndicatorList(
     Column(modifier = modifier) {
         LazyRow {
             items(items = tenseVerbList, key = { it.name }) { item ->
-                AskVerbIndicatorItem(stateVerb = item, modifier = Modifier, {
+                AskVerbIndicatorItem(stateVerb = item, modifier = Modifier) {
                     onClick(item)
-                })
+                }
             }
         }
     }
@@ -207,46 +221,25 @@ fun RangeLinearProgressBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .padding(16.dp)
             .height(10.dp)
-            .background(Black, shape = RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .background(Black)
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(fraction = (progress) / range.endInclusive)
+                .fillMaxWidth(fraction = (progress + 1) / range.endInclusive)
                 .height(10.dp)
-                .background(ForestGreen, shape = RoundedCornerShape(5.dp))
+                .clip(RoundedCornerShape(12.dp))
+                .background(ForestGreen)
         )
 
         Box(
             modifier = Modifier
                 .fillMaxWidth(fraction = progress / range.endInclusive)
                 .height(10.dp)
-                .background(color = LimeGreen, shape = RoundedCornerShape(5.dp))
+                .clip(RoundedCornerShape(12.dp))
+                .background(color = LimeGreen)
         )
     }
 }
-//        val progress by remember { mutableStateOf(1f) }
-//        val range = 1f..10f
-//
-//        RangeLinearProgressBar(
-//            progress,
-//            range,
-//            modifier = Modifier.padding(16.dp)
-//        )
-
-//
-//        Spacer(Modifier.padding(16.dp))
-//        Box(
-//            modifier = Modifier.background(color = Color.Green)
-//                .fillMaxWidth()
-//                .padding(16.dp),
-//            contentAlignment = Alignment.Center
-//        ) {
-//            Text(
-//                text = "Arise/Despertar",
-//                style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
-//                modifier = Modifier
-//
-//
-//            )
-//        }}
