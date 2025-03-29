@@ -38,6 +38,7 @@ kotlin {
              implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
+            implementation(compose.preview)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3    )
@@ -86,6 +87,7 @@ dependencies {
     implementation(libs.androidx.ui.android)
     implementation(libs.androidx.ui.unit.android)
     implementation(libs.androidx.foundation.android)
+    implementation(libs.androidx.material3.android)
     debugImplementation(compose.uiTooling)
 }
 
