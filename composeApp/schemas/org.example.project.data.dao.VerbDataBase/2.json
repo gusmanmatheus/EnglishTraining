@@ -1,0 +1,72 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "c6606294339afc0ba5e089af8584a994",
+    "entities": [
+      {
+        "tableName": "verbs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `portuguese` TEXT NOT NULL, `present` TEXT NOT NULL, `gerund` TEXT NOT NULL, `thirdPerson` TEXT NOT NULL, `simplePast` TEXT NOT NULL, `pastParticiple` TEXT NOT NULL, `isDone` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "portuguese",
+            "columnName": "portuguese",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "present",
+            "columnName": "present",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gerund",
+            "columnName": "gerund",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thirdPerson",
+            "columnName": "thirdPerson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "simplePast",
+            "columnName": "simplePast",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pastParticiple",
+            "columnName": "pastParticiple",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDone",
+            "columnName": "isDone",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c6606294339afc0ba5e089af8584a994')"
+    ]
+  }
+}

@@ -7,6 +7,10 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.room)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
+
 }
 
 kotlin {
@@ -16,7 +20,7 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     listOf(
         iosX64(),
         iosArm64(),
@@ -27,31 +31,48 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     jvm("desktop")
-    
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
     sourceSets {
         val desktopMain by getting
-        
+
         androidMain.dependencies {
             implementation(compose.preview)
-             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.activity.compose)
+
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.compose)
         }
         commonMain.dependencies {
             implementation(compose.preview)
             implementation(compose.runtime)
             implementation(compose.foundation)
-            implementation(compose.material3    )
+            implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
-            implementation(libs.androidx.ui)
+            implementation(libs.jetbrains.compose.navigation)
+
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.koin.compose)
+            implementation(libs.sqlite.bundled)
+            implementation(libs.koin.compose.viewmodel)
+            api(libs.koin.core)
+
+
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
+        }
+        dependencies {
+            ksp(libs.androidx.room.compiler)
         }
     }
 }
@@ -84,10 +105,14 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.ui.android)
-    implementation(libs.androidx.ui.unit.android)
-    implementation(libs.androidx.foundation.android)
-    implementation(libs.androidx.material3.android)
+implementation(libs.androidx.ui.graphics.android)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.ui.text.android)
+    //    implementation(libs.androidx.ui.android)
+//    implementation(libs.androidx.ui.unit.android)
+//    implementation(libs.androidx.foundation.android)
+//    implementation(libs.androidx.material3.android)
+//    implementation(libs.jetbrains.compose.navigation)
     debugImplementation(compose.uiTooling)
 }
 

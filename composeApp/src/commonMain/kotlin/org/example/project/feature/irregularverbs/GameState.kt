@@ -1,14 +1,15 @@
-package org.example.project.feature
+package org.example.project.feature.irregularverbs
 
-import org.example.project.Verb
-import org.example.project.data.StateAsk
-import org.example.project.data.TenseVerb
+import org.example.project.domain.Verb
+import org.example.project.domain.StateAsk
+import org.example.project.domain.TenseVerb
 
 data class GameState(
     val verb: Verb = verbInitial,
     val progressValue: Int = 0,
     var listTenseVerb: List<TenseVerb> = initialTenseVerbList,
-    val triedAnswer: TriedAnswer
+    val triedAnswer: TriedAnswer,
+    val isLoading: Boolean
 )
 
 private val initialTenseVerbList = listOf(

@@ -1,32 +1,42 @@
-package org.example.project.feature
+package org.example.project.feature.irregularverbs
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import org.example.project.Verb
-import org.example.project.data.StateAsk
-import org.example.project.data.TenseVerb
+import kotlinx.coroutines.launch
 import org.example.project.data.verbList
+import org.example.project.domain.StateAsk
+import org.example.project.domain.TenseVerb
+import org.example.project.domain.Verb
+import org.example.project.domain.usecase.GetVerbListUseCase
+import org.example.project.domain.usecase.SaveIsDoneVerbUseCase
+import org.example.project.domain.usecase.UpdateLocalVerbsUseCase
 
-class GameVerbViewModel : ViewModel() {
-    private val verbs = verbList
-    val verbsLimit: Float = verbs.count().toFloat()
+class GameVerbViewModel(
+    private val getVerbListUseCase: GetVerbListUseCase,
+    private val saveIsDoneVerbUseCase: SaveIsDoneVerbUseCase,
+    private val updateLocalVerbsUseCase: UpdateLocalVerbsUseCase
+) : ViewModel() {
+    val verbsLimit: Float = verbList.count().toFloat()
+    private var verbs: List<Verb> = listOf()
 
     private val _stateTenseVerb = MutableStateFlow(
         GameState(
             triedAnswer = TriedAnswer(
                 listOf(),
-                correctAnswer = verbs[0].gerund,
-                allLetters = verbs[0].gettingAllLetters()
+                correctAnswer = "Gerund",
+                allLetters = listOf()
 
             ),
-            verb = verbs[0],
-            progressValue = 0,
+            progressValue = -1,
+            isLoading = false
         )
     )
 
@@ -46,6 +56,9 @@ class GameVerbViewModel : ViewModel() {
             SharingStarted.WhileSubscribed(5000),
             _stateTenseVerb.value.listTenseVerb
         )
+    val stateIsLoading: StateFlow<Boolean> = _stateTenseVerb.map {
+        it.isLoading
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _stateTenseVerb.value.isLoading)
 
     val stateProgressValue: StateFlow<Int> = _stateTenseVerb.map { it.progressValue }
         .stateIn(
@@ -62,6 +75,28 @@ class GameVerbViewModel : ViewModel() {
                 _stateTenseVerb.value.triedAnswer.allLetters
             )
 
+    fun updateAllIrregularVerbFromServer() {
+        _stateTenseVerb.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            updateLocalVerbsUseCase.invoke().collect { isChanged ->
+                     getAllVerbs()
+
+            }
+        }
+    }
+
+    private fun getAllVerbs() {
+        viewModelScope.launch {
+            getVerbListUseCase.invoke()
+                .distinctUntilChanged()
+                .collectLatest {
+                    verbs = it
+                    nextVerb()
+
+                }
+        }
+    }
 
     private fun changeSelected(tenseVerb: TenseVerb) {
         val isNotNormal =
@@ -162,7 +197,7 @@ class GameVerbViewModel : ViewModel() {
                             correctLetters = correctLetter,
                             allLetters = removingUsedList(
                                 it.verb.gettingAllLetters(),
-                                 correctLetter
+                                correctLetter
                             ),
                         ),
                     )
@@ -173,18 +208,23 @@ class GameVerbViewModel : ViewModel() {
                 if (nextStatus > -1) {
                     changeSelected(it.listTenseVerb[nextStatus])
                 } else {
+                    saveVerbAsDone(verbs[stateProgressValue.value])
                     nextVerb()
                 }
             }
         }
     }
+    private fun saveVerbAsDone(verb: Verb){
+        updateVerb(verb)
+
+    }
 
     private fun nextVerb() {
-        val newProgress = _stateTenseVerb.value.progressValue + 1
+        val oldProgress = _stateTenseVerb.value.progressValue
+        val newProgress = oldProgress + 1
         if (_stateTenseVerb.value.progressValue >= verbs.count()) {
             Throwable("ERRO END GAME")
         }
-
         _stateTenseVerb.value = GameState(
             triedAnswer = TriedAnswer(
                 tried = listOf(),
@@ -194,9 +234,16 @@ class GameVerbViewModel : ViewModel() {
             ),
             verb = verbs[newProgress],
             progressValue = newProgress,
+            isLoading = false
         )
+
     }
 
+    private fun updateVerb(verb: Verb) {
+        viewModelScope.launch {
+            saveIsDoneVerbUseCase.invoke(verb)
+        }
+    }
 
     private fun removingUsedList(allLetters: List<Char>, usedList: List<Char>): List<Char> =
         allLetters.toMutableList().apply {

@@ -1,6 +1,6 @@
-package org.example.project.feature
+package org.example.project.feature.irregularverbs
 
-import org.example.project.data.TenseVerb
+import org.example.project.domain.TenseVerb
 
 
 sealed interface GameScreenAction {
@@ -9,6 +9,6 @@ sealed interface GameScreenAction {
     data object ChangeProgressBar: GameScreenAction
     data object IncorrectTried: GameScreenAction
     data class TypingAnswer(val typing: Char): GameScreenAction
-    data class RemovingLetter(val position: Int):GameScreenAction
+    data class RemovingLetter(val position: Int): GameScreenAction
 
 }

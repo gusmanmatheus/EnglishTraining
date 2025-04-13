@@ -1,4 +1,4 @@
-package org.example.project.feature
+package org.example.project.feature.irregularverbs
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues

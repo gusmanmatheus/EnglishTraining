@@ -1,22 +1,27 @@
-package org.example.project.feature
+package org.example.project.feature.irregularverbs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -29,28 +34,31 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.example.project.Verb
 import org.example.project.assets.Black
 import org.example.project.assets.ForestGreen
 import org.example.project.assets.LimeGreen
-import org.example.project.data.StateAsk
-import org.example.project.data.TenseVerb
+import org.example.project.domain.StateAsk
+import org.example.project.domain.TenseVerb
+import org.example.project.domain.Verb
 
 @Composable
 fun GameVisorRoot(gameViewModel: GameVerbViewModel) {
-    val verb by gameViewModel.stateVerb.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) {
+        gameViewModel.updateAllIrregularVerbFromServer()
+    }
+     val verb by gameViewModel.stateVerb.collectAsStateWithLifecycle()
     val tried by gameViewModel.stateTriedAnswer.collectAsStateWithLifecycle()
     val progress by gameViewModel.stateProgressValue.collectAsStateWithLifecycle()
-    val filteredLetters by gameViewModel.stateFilteredLetters.collectAsStateWithLifecycle()
     val listTenseVerb by gameViewModel.stateListTenseVerb.collectAsStateWithLifecycle()
     val limitProgress = gameViewModel.verbsLimit
+    val isLoading by gameViewModel.stateIsLoading.collectAsStateWithLifecycle()
 
     GameVisorScreen(
         verb,
         tried,
         progress,
         limitProgress,
-        filteredLetters,
+        isLoading,
         listTenseVerb,
         onAction = { action ->
             gameViewModel.onAction(action)
@@ -63,25 +71,28 @@ fun GameVisorScreen(
     tried: TriedAnswer,
     progress: Int,
     limitProgress: Float,
-    filteredLetters: List<Char>,
+    isLoading: Boolean,
     listTenseVerb: List<TenseVerb>, onAction: (GameScreenAction) -> Unit
 ) {
-    Column {
-        RangeLinearProgressBar(progress.toFloat() + 1, 0f..limitProgress)
-        VerbDisplay(verb)
-        InteractionSection(tried = tried, listTenseVerb = listTenseVerb, onAction = onAction)
-        AnswerButton(tried = tried, onAction = onAction)
-        LetterGrid(
-            tried.allLetters,
-            onClick = { letter ->
-                if (tried.maxLetter > tried.tried.count()) {
-                    onAction(GameScreenAction.TypingAnswer(letter))
+    if (isLoading) {
+        LoadingScreen()
+    } else {
+        Column {
+            RangeLinearProgressBar(progress.toFloat() + 1, 0f..limitProgress)
+            VerbDisplay(verb)
+            InteractionSection(tried = tried, listTenseVerb = listTenseVerb, onAction = onAction)
+            AnswerButton(tried = tried, onAction = onAction)
+            LetterGrid(
+                tried.allLetters,
+                onClick = { letter ->
+                    if (tried.maxLetter > tried.tried.count()) {
+                        onAction(GameScreenAction.TypingAnswer(letter))
 
-                }
-            })
+                    }
+                })
+        }
+
     }
-
-
 }
 
 @Composable
@@ -201,7 +212,7 @@ fun TextReceiver(
         modifier = modifier
     ) {
         Text("${chosenLetters.count()} / $maxLetter")
-        LazyRow() {
+        LazyRow {
             itemsIndexed(chosenLetters) { index, letter ->
                 LetterCompose(letter) {
                     onClick(index)
@@ -241,5 +252,33 @@ fun RangeLinearProgressBar(
                 .clip(RoundedCornerShape(12.dp))
                 .background(color = LimeGreen)
         )
+    }
+}
+@Composable
+fun LoadingScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+        , contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .size(60.dp)
+                    .padding(16.dp),
+                color = ForestGreen
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Loading...",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
+        }
     }
 }

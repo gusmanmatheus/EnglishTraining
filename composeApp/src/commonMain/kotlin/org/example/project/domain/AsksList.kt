@@ -1,4 +1,4 @@
-package org.example.project.data
+package org.example.project.domain
 
 
 sealed class TenseVerb(open val stateAsk: StateAsk, open val name: String) {
